@@ -2,20 +2,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const GRID_ROWS = 8;
     const GRID_COLS = 16;
     const TARGET_SCORE = 10;
+    const MAX_SCALE = 1.6; // How much the digit grows max
+    const SCALE_RADIUS = 2.5; // How far the scaling effect reaches (in grid units)
 
     const gridElement = document.getElementById('game-grid');
-    const scoreElements = {
-        W: document.getElementById('score-W'),
-        F: document.getElementById('score-F'),
-        D: document.getElementById('score-D'),
-        M: document.getElementById('score-M'),
-    };
-    const binButtons = {
+    // Score Elements Removed
+    const binButtons = { // Keep refs to buttons themselves
         W: document.getElementById('bin-W'),
         F: document.getElementById('bin-F'),
         D: document.getElementById('bin-D'),
         M: document.getElementById('bin-M'),
     };
+    // Get references to the fill spans *within* buttons
+    const fillElements = {
+        W: binButtons.W.querySelector('.fill'),
+        F: binButtons.F.querySelector('.fill'),
+        D: binButtons.D.querySelector('.fill'),
+        M: binButtons.M.querySelector('.fill'),
+    }
     const winMessageElement = document.getElementById('win-message');
 
     let grid = []; // 2D array holding the numbers
@@ -23,9 +27,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let scores = { W: 0, F: 0, D: 0, M: 0 };
 
     let isSelecting = false;
-    let selectionStartCoords = null; // { row: r, col: c }
-    let selectionEndCoords = null; // { row: r, col: c }
-    let currentSelection = []; // Array of { row: r, col: c } objects
+    let selectionStartCoords = null;
+    let selectionEndCoords = null;
+    let currentSelection = [];
 
     // --- Initialization ---
 
@@ -55,89 +59,91 @@ document.addEventListener('DOMContentLoaded', () => {
         return Math.floor(Math.random() * 10);
     }
 
+    // --- Score Display (Button Fill) ---
     function updateScoreDisplay() {
-        for (const bin in scores) {
-            if (scoreElements[bin]) {
-                scoreElements[bin].textContent = scores[bin];
+        for (const binType in scores) {
+            if (fillElements[binType]) {
+                const score = scores[binType];
+                // Cap score at TARGET_SCORE for percentage calculation
+                const percentage = Math.min(100, (score / TARGET_SCORE) * 100);
+                fillElements[binType].style.width = `${percentage}%`;
+                console.log(`Updating ${binType} fill to ${percentage}%`);
             }
         }
     }
 
-    // --- Selection Logic ---
+    // --- Selection Logic (Largely unchanged, just visual differences) ---
 
     function getCoordsFromEvent(event) {
-        const target = event.target;
-        if (target && target.classList.contains('grid-cell')) {
+        // Use closest() to handle clicks potentially hitting scaled text
+        const target = event.target.closest('.grid-cell');
+        if (target) {
             return {
                 row: parseInt(target.dataset.row, 10),
                 col: parseInt(target.dataset.col, 10)
             };
         }
-        return null; // Click was not on a cell
+        return null;
     }
 
     function handleMouseDown(event) {
+         // Reset scales maybe? Or let selection highlight override? Let's try without reset first.
+        // resetCellScales(); // Optionally reset scales on click start
         const coords = getCoordsFromEvent(event);
         if (coords) {
             isSelecting = true;
             selectionStartCoords = coords;
-            selectionEndCoords = coords; // Start and end are same initially
-            clearSelectionHighlight(); // Clear previous selection
+            selectionEndCoords = coords;
+            clearSelectionHighlight();
             highlightSelection(); // Highlight the single starting cell
-            gridElement.style.cursor = 'grabbing'; // Change cursor during drag
-            event.preventDefault(); // Prevent text selection browser behavior
+            gridElement.style.cursor = 'grabbing';
+            event.preventDefault();
         }
     }
 
-    function handleMouseMove(event) {
+    function handleMouseMove(event) { // This listener is on DOCUMENT
         if (!isSelecting) return;
 
-        // Calculate current cell based on mouse position relative to grid
         const gridRect = gridElement.getBoundingClientRect();
         const mouseX = event.clientX - gridRect.left;
         const mouseY = event.clientY - gridRect.top;
 
-        // Estimate cell dimensions (including gaps)
         const cellWidthWithGap = gridRect.width / GRID_COLS;
         const cellHeightWithGap = gridRect.height / GRID_ROWS;
 
-        // Calculate target column and row
         let targetCol = Math.floor(mouseX / cellWidthWithGap);
         let targetRow = Math.floor(mouseY / cellHeightWithGap);
 
-        // Clamp values to grid boundaries
         targetCol = Math.max(0, Math.min(GRID_COLS - 1, targetCol));
         targetRow = Math.max(0, Math.min(GRID_ROWS - 1, targetRow));
 
         const currentCoords = { row: targetRow, col: targetCol };
 
-        // Only update if the target cell has changed
         if (currentCoords.row !== selectionEndCoords.row || currentCoords.col !== selectionEndCoords.col) {
             selectionEndCoords = currentCoords;
-            highlightSelection();
+            highlightSelection(); // Update selection rectangle highlight
         }
         event.preventDefault();
     }
 
 
-    function handleMouseUp(event) {
+    function handleMouseUp(event) { // This listener is on DOCUMENT
         if (isSelecting) {
             isSelecting = false;
             gridElement.style.cursor = 'crosshair'; // Reset cursor
-
-            // Final selection is stored in currentSelection from the last mousemove highlight
-            if (currentSelection.length === 0 && selectionStartCoords) {
-                 // If mouseup happens on the start cell without moving
+            // Final selection is stored in currentSelection
+             if (currentSelection.length === 0 && selectionStartCoords) {
                  currentSelection = [selectionStartCoords];
-                 highlightSelection(); // Ensure it's highlighted if needed
+                 highlightSelection();
             }
              console.log(`Selection finalized: ${currentSelection.length} cells`);
+             // Don't reset scales here, let the grid mousemove/mouseleave handle it
         }
     }
 
     function highlightSelection() {
-        clearSelectionHighlight(); // Clear previous highlight first
-        currentSelection = []; // Reset the list of selected cells
+        clearSelectionHighlight();
+        currentSelection = [];
 
         if (!selectionStartCoords || !selectionEndCoords) return;
 
@@ -160,7 +166,66 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.grid-cell.selected').forEach(cell => {
             cell.classList.remove('selected');
         });
-        // Don't clear currentSelection here, wait until after binning or new selection start
+        // Don't clear currentSelection until after binning
+    }
+
+    // --- Hover/Scaling Logic ---
+
+    function gridMouseMove(event) {
+        // This listener is on the GRID element
+        if (isSelecting) return; // Don't apply hover effect during selection drag
+
+        const gridRect = gridElement.getBoundingClientRect();
+        // Calculate mouse position relative to the grid container
+        const mouseX = event.clientX - gridRect.left;
+        const mouseY = event.clientY - gridRect.top;
+
+        // Calculate which cell the mouse is conceptually over (even in the gaps)
+        const hoverCol = mouseX / (gridRect.width / GRID_COLS);
+        const hoverRow = mouseY / (gridRect.height / GRID_ROWS);
+
+        // Apply scaling to all cells based on distance
+        for (let r = 0; r < GRID_ROWS; r++) {
+            for (let c = 0; c < GRID_COLS; c++) {
+                if (cellElements[r] && cellElements[r][c]) {
+                    // Calculate distance from cell center (r + 0.5, c + 0.5) to hover position
+                    const dx = (c + 0.5) - hoverCol;
+                    const dy = (r + 0.5) - hoverRow;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    // Calculate scale using exponential decay
+                    // Scale = base_scale + added_scale * decay_factor
+                    // decay_factor approaches 0 as distance increases
+                    let scale = 1.0;
+                    if (distance < SCALE_RADIUS * 1.5) { // Optimization: only calculate exp for nearby cells
+                       scale = 1.0 + (MAX_SCALE - 1.0) * Math.exp(-(distance * distance) / (SCALE_RADIUS * SCALE_RADIUS));
+                    }
+
+                    // Clamp scale to prevent excessive shrinking if needed (optional)
+                    scale = Math.max(1.0, scale); // Ensure minimum scale is 1
+
+                    cellElements[r][c].style.transform = `scale(${scale.toFixed(3)})`; // Apply scale
+                    // Add/remove a class for potential z-index styling
+                    if (scale > 1.01) { // Use a small threshold
+                         cellElements[r][c].classList.add('scaling');
+                    } else {
+                         cellElements[r][c].classList.remove('scaling');
+                    }
+                }
+            }
+        }
+    }
+
+    function resetCellScales() {
+        console.log("Resetting cell scales");
+        for (let r = 0; r < GRID_ROWS; r++) {
+            for (let c = 0; c < GRID_COLS; c++) {
+                if (cellElements[r] && cellElements[r][c]) {
+                    cellElements[r][c].style.transform = 'scale(1.0)';
+                    cellElements[r][c].classList.remove('scaling');
+                }
+            }
+        }
     }
 
 
@@ -169,24 +234,28 @@ document.addEventListener('DOMContentLoaded', () => {
     function handleBinClick(binType) {
         if (currentSelection.length === 0) {
             console.log("No selection to bin.");
-            return; // Nothing selected
+            return;
         }
+        // If a scale effect is active, reset it visually before proceeding
+        resetCellScales();
 
         console.log(`Attempting to bin selection into ${binType}`);
-
         const selectionDetails = getSelectionDetails(currentSelection);
         const isCorrect = checkRule(binType, selectionDetails);
 
-        if (isCorrect) {
+        // Only increment score if it's below the target
+        if (isCorrect && scores[binType] < TARGET_SCORE) {
             scores[binType]++;
             console.log(`Correct bin! Score for ${binType} is now ${scores[binType]}`);
+        } else if (isCorrect) {
+             console.log(`Correct bin, but ${binType} score already maxed out.`);
         } else {
             console.log("Incorrect bin.");
         }
 
         removeAndRefill(currentSelection); // Always remove and refill
-        updateScoreDisplay();
-        clearSelectionHighlight(); // Clear visual selection
+        updateScoreDisplay(); // Update button fill percentage
+        // Selection highlight is cleared within removeAndRefill via renderGrid
         currentSelection = []; // Clear internal selection data
         selectionStartCoords = null;
         selectionEndCoords = null;
@@ -194,6 +263,7 @@ document.addEventListener('DOMContentLoaded', () => {
         checkWinCondition();
     }
 
+    // getSelectionDetails remains the same
     function getSelectionDetails(selectedCoords) {
         if (!selectedCoords || selectedCoords.length === 0) {
             return null;
@@ -206,19 +276,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const rows = maxRow - minRow + 1;
         const cols = maxCol - minCol + 1;
-        const numbers = []; // Store numbers in their grid structure
-        const flatNumbers = []; // Store numbers as a flat list
+        const numbers = [];
+        const flatNumbers = [];
         let sum = 0;
-        const counts = {}; // Count occurrences of each digit
+        const counts = {};
 
+        // Need to iterate based on actual selected coords, not just bounding box
+        // if the selection wasn't perfectly rectangular (though it should be here)
+        // But using bounding box is fine since selection logic creates rectangles.
         for (let r = minRow; r <= maxRow; r++) {
             const rowNumbers = [];
             for (let c = minCol; c <= maxCol; c++) {
-                const num = grid[r][c];
-                rowNumbers.push(num);
-                flatNumbers.push(num);
-                sum += num;
-                counts[num] = (counts[num] || 0) + 1;
+                // Ensure this coord was actually part of the selection
+                // (Handles potential non-rectangular cases, though less likely here)
+                // if (selectedCoords.some(coord => coord.row === r && coord.col === c)) {
+                    const num = grid[r][c];
+                    rowNumbers.push(num);
+                    flatNumbers.push(num);
+                    sum += num;
+                    counts[num] = (counts[num] || 0) + 1;
+                // } else {
+                //     rowNumbers.push(undefined); // Or handle differently if needed
+                // }
             }
             numbers.push(rowNumbers);
         }
@@ -230,16 +309,18 @@ document.addEventListener('DOMContentLoaded', () => {
             minCol: minCol,
             maxRow: maxRow,
             maxCol: maxCol,
-            numbers: numbers, // 2D array of numbers in selection
-            flatNumbers: flatNumbers, // 1D array of numbers
+            numbers: numbers, // 2D array matching bounding box
+            flatNumbers: flatNumbers, // 1D array of numbers in selection
             sum: sum,
             counts: counts,
             topLeftValue: grid[minRow][minCol],
             bottomRightValue: grid[maxRow][maxCol],
-            coords: selectedCoords // Pass original coords if needed
+            coords: selectedCoords
         };
     }
 
+
+    // checkRule remains the same
     function checkRule(binType, details) {
         if (!details) return false;
 
@@ -261,110 +342,136 @@ document.addEventListener('DOMContentLoaded', () => {
                 return details.rows === 1 && details.cols === 3 &&
                        details.sum === 8;
             default:
-                return false; // Unknown bin type
+                return false;
         }
     }
 
-    // --- Grid Refill Logic ---
-
+    // --- Grid Refill Logic (Remains the same logic) ---
     function removeAndRefill(coordsToRemove) {
         const affectedCols = new Set();
         coordsToRemove.forEach(coord => {
-            grid[coord.row][coord.col] = null; // Mark as empty
-            affectedCols.add(coord.col);
+            if (grid[coord.row] && grid[coord.row][coord.col] !== undefined) {
+                 grid[coord.row][coord.col] = null; // Mark as empty
+                 affectedCols.add(coord.col);
+            }
         });
 
         console.log(`Removed ${coordsToRemove.length} cells. Affecting columns:`, Array.from(affectedCols));
 
-        // Process each affected column
         affectedCols.forEach(col => {
-            let emptyRow = GRID_ROWS - 1; // Start checking from bottom
-            let writeRow = GRID_ROWS - 1; // Where to write the next non-empty cell
+            let emptyRow = GRID_ROWS - 1;
+            let writeRow = GRID_ROWS - 1;
 
-            // Move existing numbers down
             while (emptyRow >= 0) {
-                // Find the next empty cell from the bottom up
-                while (emptyRow >= 0 && grid[emptyRow][col] !== null) {
-                    emptyRow--;
-                }
-
-                // If an empty cell was found, search for the next non-empty cell above it
-                if (emptyRow >= 0) {
-                    writeRow = emptyRow; // This is where the next non-empty should go
+                 while (emptyRow >= 0 && grid[emptyRow][col] !== null) {
+                     emptyRow--;
+                 }
+                 if (emptyRow >= 0) {
+                    writeRow = emptyRow;
                     let readRow = emptyRow - 1;
                     while (readRow >= 0 && grid[readRow][col] === null) {
                         readRow--;
                     }
-
-                    // If a non-empty cell was found above
                     if (readRow >= 0) {
-                        grid[writeRow][col] = grid[readRow][col]; // Move number down
-                        grid[readRow][col] = null; // Set original position to empty
+                        grid[writeRow][col] = grid[readRow][col];
+                        grid[readRow][col] = null;
                     }
-                    emptyRow--; // Continue searching upwards from the row above the one we just potentially filled
+                    emptyRow--;
                 }
-            } // Finished shifting down existing numbers
+            } // Finished shifting down
 
-            // Fill remaining nulls at the top with new random digits
             for (let r = 0; r < GRID_ROWS; r++) {
                 if (grid[r][col] === null) {
                     grid[r][col] = getRandomDigit();
                 } else {
-                    break; // Stop once we hit non-null cells (they are all shifted down)
+                     break; // Assumes top rows are filled contiguously
                 }
             }
         });
 
-        // Update the DOM display
-        renderGrid();
+        renderGrid(); // Update DOM display
     }
 
 
-    function renderGrid() {
+    // renderGrid remains largely the same, ensures selection is cleared
+     function renderGrid() {
         console.log("Rendering grid updates");
         for (let r = 0; r < GRID_ROWS; r++) {
             for (let c = 0; c < GRID_COLS; c++) {
-                 // Check if cell element exists before updating
-                if (cellElements[r] && cellElements[r][c]) {
-                    cellElements[r][c].textContent = grid[r][c];
-                    // Ensure no 'selected' class remains after refill
+                 if (cellElements[r] && cellElements[r][c]) {
+                     // Update text content only if it changed (minor optimization)
+                     if (cellElements[r][c].textContent !== String(grid[r][c])) {
+                         cellElements[r][c].textContent = grid[r][c];
+                     }
+                    // Ensure no 'selected' class remains after refill/render
                     cellElements[r][c].classList.remove('selected');
-                } else {
+                    // Optionally ensure scale is reset here too, though mouseleave should handle it
+                    // cellElements[r][c].style.transform = 'scale(1.0)';
+                    // cellElements[r][c].classList.remove('scaling');
+                 } else {
                      console.error(`Error: Cell element at [${r}][${c}] not found during render.`);
-                }
+                 }
             }
         }
-    }
+     }
 
     // --- Win Condition ---
 
     function checkWinCondition() {
         const won = Object.values(scores).every(score => score >= TARGET_SCORE);
         if (won) {
-            winMessageElement.style.display = 'block'; // Show win message
+            winMessageElement.style.display = 'block';
             console.log("Game Won!");
-            // Optionally disable further interaction
+            // Disable grid interactions
+            gridElement.removeEventListener('mousemove', gridMouseMove);
+            gridElement.removeEventListener('mouseleave', resetCellScales);
+            // Keep selection listeners potentially, or remove them
             gridElement.removeEventListener('mousedown', handleMouseDown);
-            document.removeEventListener('mousemove', handleMouseMove);
-            document.removeEventListener('mouseup', handleMouseUp);
+            // Document listeners might still be active, remove if needed
+            // document.removeEventListener('mousemove', handleMouseMove);
+            // document.removeEventListener('mouseup', handleMouseUp);
+
             Object.values(binButtons).forEach(button => button.disabled = true);
+             resetCellScales(); // Ensure scales are reset on win
         }
     }
 
     // --- Event Listeners Setup ---
 
     function setupEventListeners() {
-        // Use event delegation on the grid container
+        // Remove potentially old listeners first to prevent duplicates if re-initializing
+        gridElement.removeEventListener('mousedown', handleMouseDown);
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+        gridElement.removeEventListener('mousemove', gridMouseMove);
+        gridElement.removeEventListener('mouseleave', resetCellScales);
+        Object.values(binButtons).forEach(button => {
+             // Clone and replace to remove old listeners safely
+             const newButton = button.cloneNode(true);
+             // Copy fill span reference if needed, or re-query
+             button.parentNode.replaceChild(newButton, button);
+             // Re-find the fill span for the new button element
+             const binType = newButton.id.split('-')[1]; // Assumes id="bin-W" format
+             fillElements[binType] = newButton.querySelector('.fill');
+             // Add listener to the new button
+             newButton.addEventListener('click', () => handleBinClick(binType));
+             // Update the reference in binButtons map
+             binButtons[binType] = newButton;
+        });
+
+
+        // --- Add listeners ---
+        // Selection listeners (mouse down on grid, move/up on document)
         gridElement.addEventListener('mousedown', handleMouseDown);
-        // Attach mousemove and mouseup to the document to handle dragging outside the grid
-        document.addEventListener('mousemove', handleMouseMove);
-        document.addEventListener('mouseup', handleMouseUp);
+        document.addEventListener('mousemove', handleMouseMove); // For dragging selection rect
+        document.addEventListener('mouseup', handleMouseUp);   // For ending selection rect
 
+        // Hover/Scale listeners (move/leave on grid)
+        gridElement.addEventListener('mousemove', gridMouseMove); // For scaling effect
+        gridElement.addEventListener('mouseleave', resetCellScales); // Reset scaling on leave
 
-        // Bin button listeners
-        for (const binType in binButtons) {
-            binButtons[binType].addEventListener('click', () => handleBinClick(binType));
-        }
+        // Bin button listeners (already re-added above)
+
         console.log("Event listeners set up.");
     }
 
@@ -373,17 +480,18 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log("Starting game...");
         initializeGrid();
         scores = { W: 0, F: 0, D: 0, M: 0 }; // Reset scores
-        updateScoreDisplay();
+        updateScoreDisplay(); // Reset button fills
         clearSelectionHighlight();
         currentSelection = [];
         selectionStartCoords = null;
         selectionEndCoords = null;
-        winMessageElement.style.display = 'none'; // Hide win message
+        winMessageElement.style.display = 'none';
         Object.values(binButtons).forEach(button => button.disabled = false); // Enable buttons
-        setupEventListeners(); // Re-attach if they were removed on win
+        setupEventListeners();
+         resetCellScales(); // Ensure scales start reset
         console.log("Game ready.");
     }
 
-    startGame(); // Initialize the game when the script loads
+    startGame(); // Initialize the game
 
 }); // End DOMContentLoaded
