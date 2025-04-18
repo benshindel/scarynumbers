@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', () => { 
     const GRID_ROWS = 8;
     const GRID_COLS = 16;
     const TARGET_SCORE = 10;
