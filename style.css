@@ -2,82 +2,113 @@
 @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
 
 body {
-    /* Retro font */
     font-family: 'VT323', monospace;
     display: flex;
-    flex-direction: column; /* Stack title, game, message vertically */
+    flex-direction: column;
     align-items: center;
     margin-top: 20px;
-    /* Retro colors */
     background-color: #00004d; /* Dark blue background */
     color: #ffffff; /* White text */
-    user-select: none; /* Prevent text selection during drag */
-    -webkit-user-select: none; /* Safari */
-    -moz-user-select: none; /* Firefox */
-    -ms-user-select: none; /* IE/Edge */
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
 }
 
 h1 {
     color: #87ceeb; /* Light blue title */
     letter-spacing: 2px;
     text-shadow: 1px 1px 2px #000000;
-    font-size: 2.5em; /* Larger font size for VT323 */
+    font-size: 2.5em;
+    margin-bottom: 15px; /* Space below title */
+}
+
+/* Styles for the file selector */
+.file-selector-container {
+    margin-bottom: 15px;
+    padding: 10px;
+    background-color: #000033; /* Match game container bg */
+    border: 1px solid #87ceeb; /* Match game container border */
+    display: inline-block; /* Fit content */
+}
+
+.file-selector-container label {
+    margin-right: 10px;
+    font-size: 20px; /* Match button font size */
+    color: #87ceeb; /* Light blue label */
+}
+
+#file-select {
+    font-family: 'VT323', monospace; /* Apply retro font */
+    font-size: 18px; /* Slightly smaller than label */
+    background-color: #1a1a4d; /* Dark blue background */
+    color: #ffffff; /* White text */
+    border: 1px solid #87ceeb; /* Light blue border */
+    padding: 5px 8px;
+    /* Remove default appearance */
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    /* Add custom arrow or leave as is for retro feel */
+    cursor: pointer;
+}
+
+#file-select:focus {
+    outline: 1px dashed #87ceeb; /* Retro focus outline */
 }
 
 #game-container {
     display: flex;
     flex-direction: column;
     align-items: center;
-    background-color: #000033; /* Slightly lighter dark blue */
+    background-color: #000033;
     padding: 20px;
-    border: 2px solid #87ceeb; /* Light blue border */
-    /* Removed border-radius */
-    box-shadow: 0 0 10px #87ceeb; /* Glow effect */
+    border: 2px solid #87ceeb;
+    box-shadow: 0 0 10px #87ceeb;
 }
 
 #game-grid {
     display: grid;
-    grid-template-columns: repeat(16, 35px); /* Slightly wider cells */
-    grid-template-rows: repeat(8, 35px);    /* Slightly taller cells */
-    gap: 1px; /* Smaller gap */
-    border: 1px solid #555; /* Grid border */
+    grid-template-columns: repeat(16, 35px);
+    grid-template-rows: repeat(8, 35px);
+    gap: 1px;
+    border: 1px solid #555;
     margin-bottom: 20px;
     position: relative;
-    background-color: #333; /* Darker grid background */
-    padding: 1px; /* Match gap size */
+    background-color: #333;
+    padding: 1px;
     cursor: crosshair;
 }
 
 .grid-cell {
     width: 35px;
     height: 35px;
-    border: 1px solid #444; /* Darker cell border */
+    border: 1px solid #444;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 24px; /* Larger font size for VT323 */
-    font-weight: normal; /* VT323 looks bold by default */
-    background-color: #1a1a4d; /* Dark blue cell background */
-    color: #ffffff; /* White numbers */
-    transition: transform 0.1s ease-out, background-color 0.1s ease, border-color 0.1s ease; /* Added transform transition */
+    font-size: 24px;
+    font-weight: normal;
+    background-color: #1a1a4d;
+    color: #ffffff;
+    transition: transform 0.1s ease-out, background-color 0.1s ease, border-color 0.1s ease;
     user-select: none;
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
-    position: relative; /* Needed for potential z-index on scaling */
-    z-index: 5; /* Base z-index */
+    position: relative;
+    z-index: 5;
 }
 
-/* Scaling effect will be applied via JS, but we ensure z-index increases */
 .grid-cell.scaling {
     z-index: 10;
 }
 
 .grid-cell.selected {
-    background-color: #3d5a80; /* Muted light blue for selection */
-    border-color: #87ceeb; /* Brighter border for selection */
+    background-color: #3d5a80;
+    border-color: #87ceeb;
     color: #fff;
-    z-index: 15 !important; /* Ensure selected cells are visually prominent */
+    z-index: 15 !important;
 }
 
 #controls {
@@ -87,27 +118,24 @@ h1 {
     width: 100%;
 }
 
-/* Score Area Removed */
-
 #bin-buttons button {
     padding: 10px 15px;
-    font-size: 20px; /* Larger font size for VT323 */
-    margin: 5px; /* Added vertical margin */
+    font-size: 20px;
+    margin: 5px;
     cursor: pointer;
-    border: 1px solid #87ceeb; /* Light blue border */
-    /* Removed border-radius */
-    background-color: #000066; /* Dark blue button background */
-    color: #ffffff; /* White text */
+    border: 1px solid #87ceeb;
+    background-color: #000066;
+    color: #ffffff;
     transition: background-color 0.2s ease;
-    position: relative; /* Needed for absolute positioning of fill */
-    overflow: hidden; /* Keep fill within bounds */
-    min-width: 100px; /* Ensure buttons have some width */
+    position: relative;
+    overflow: hidden;
+    min-width: 100px;
     text-align: center;
-    font-family: 'VT323', monospace; /* Ensure button font */
+    font-family: 'VT323', monospace;
 }
 
 #bin-buttons button:hover {
-    background-color: #000099; /* Lighter blue on hover */
+    background-color: #000099;
 }
 
 #bin-buttons button .fill {
@@ -115,31 +143,30 @@ h1 {
     top: 0;
     left: 0;
     height: 100%;
-    width: 0%; /* Starts at 0% */
-    background-color: #87ceeb; /* Light blue fill color */
-    opacity: 0.6; /* Make it slightly transparent */
-    z-index: 1; /* Behind the text */
-    transition: width 0.3s ease-in-out; /* Smooth fill transition */
+    width: 0%;
+    background-color: #87ceeb;
+    opacity: 0.6;
+    z-index: 1;
+    transition: width 0.3s ease-in-out;
 }
 
 #bin-buttons button .btn-text {
-    position: relative; /* To ensure it's above the fill */
-    z-index: 2; /* Above the fill */
+    position: relative;
+    z-index: 2;
 }
 
 #win-message {
     margin-top: 20px;
     padding: 20px;
-    background-color: #003300; /* Dark green background */
-    color: #00ff00; /* Bright green text */
-    border: 1px solid #00ff00; /* Bright green border */
-    /* Removed border-radius */
+    background-color: #003300;
+    color: #00ff00;
+    border: 1px solid #00ff00;
     text-align: center;
-    font-size: 24px; /* Larger font size */
+    font-size: 24px;
     text-shadow: 1px 1px 2px #000000;
 }
 
 #win-message h2 {
     margin: 0;
-    color: #00ff00; /* Ensure h2 also uses bright green */
+    color: #00ff00;
 }
