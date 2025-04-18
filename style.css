@@ -23,39 +23,58 @@ h1 {
     margin-bottom: 15px; /* Space below title */
 }
 
-/* Styles for the file selector */
-.file-selector-container {
-    margin-bottom: 15px;
-    padding: 10px;
-    background-color: #000033; /* Match game container bg */
-    border: 1px solid #87ceeb; /* Match game container border */
-    display: inline-block; /* Fit content */
+/* --- Rolodex Styles --- */
+.rolodex-container {
+    display: flex; /* Arrange items horizontally */
+    align-items: center; /* Center items vertically */
+    justify-content: center; /* Center items horizontally */
+    margin-bottom: 20px;
+    padding: 5px 10px;
+    background-color: #000033; /* Slightly lighter dark blue */
+    border: 2px solid #87ceeb; /* Light blue border */
+    min-width: 250px; /* Ensure it has some width */
+    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5); /* Inner shadow */
 }
 
-.file-selector-container label {
-    margin-right: 10px;
-    font-size: 20px; /* Match button font size */
-    color: #87ceeb; /* Light blue label */
+.rolodex-card {
+    background-color: #e0e0e0; /* Light grey card background */
+    color: #00004d; /* Dark blue text on card */
+    border: 1px solid #555; /* Dark border for card */
+    padding: 8px 20px; /* Padding inside the card */
+    margin: 0 10px; /* Space between card and buttons */
+    min-width: 150px; /* Ensure card has width */
+    text-align: center;
+    box-shadow: 2px 2px 3px rgba(0, 0, 0, 0.3); /* Slight card shadow */
+    /* Optional: Slight rotation */
+    /* transform: rotate(-1deg); */
 }
 
-#file-select {
-    font-family: 'VT323', monospace; /* Apply retro font */
-    font-size: 18px; /* Slightly smaller than label */
-    background-color: #1a1a4d; /* Dark blue background */
-    color: #ffffff; /* White text */
-    border: 1px solid #87ceeb; /* Light blue border */
-    padding: 5px 8px;
-    /* Remove default appearance */
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    /* Add custom arrow or leave as is for retro feel */
+#rolodex-filename {
+    font-size: 24px; /* Larger font for filename */
+    font-weight: normal; /* VT323 looks bold */
+    letter-spacing: 1px;
+}
+
+.rolodex-button {
+    background-color: transparent; /* No background */
+    border: none; /* No border */
+    color: #87ceeb; /* Light blue arrow color */
+    font-size: 30px; /* Large arrows */
     cursor: pointer;
+    padding: 0 10px; /* Padding around arrows */
+    font-family: monospace; /* Ensure arrows render consistently */
+    transition: color 0.2s ease;
 }
 
-#file-select:focus {
-    outline: 1px dashed #87ceeb; /* Retro focus outline */
+.rolodex-button:hover {
+    color: #ffffff; /* White on hover */
 }
+
+.rolodex-button:active {
+    transform: translateY(1px); /* Simple press effect */
+}
+/* --- End Rolodex Styles --- */
+
 
 #game-container {
     display: flex;
@@ -66,6 +85,8 @@ h1 {
     border: 2px solid #87ceeb;
     box-shadow: 0 0 10px #87ceeb;
 }
+
+/* Rest of the styles remain the same... */
 
 #game-grid {
     display: grid;
