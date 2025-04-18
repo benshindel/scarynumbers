@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MACRODATA REFINEMENT</title>
+    <title>Number Binning [Retro]</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -11,6 +11,15 @@
 </head>
 <body>
     <h1>MACRODATA REFINEMENT</h1>
+
+    <div class="file-selector-container">
+        <label for="file-select">Select File:</label>
+        <select id="file-select">
+            <option value="Tempe">Tempe</option>
+            <option value="Evanston">Evanston</option>
+            <option value="Rockville">Rockville</option>
+        </select>
+    </div>
 
     <div id="game-container">
         <div id="game-grid">
@@ -36,7 +45,7 @@
 
     <div id="win-message" style="display: none;">
         <h2>FILE COMPLETE_</h2>
-        </div>
+    </div>
 
     <script src="script.js"></script>
 </body>
