@@ -1,105 +1,145 @@
+/* Import font */
+@import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
 body {
-    font-family: sans-serif;
+    /* Retro font */
+    font-family: 'VT323', monospace;
     display: flex;
     flex-direction: column; /* Stack title, game, message vertically */
     align-items: center;
     margin-top: 20px;
-    background-color: #f0f0f0;
+    /* Retro colors */
+    background-color: #00004d; /* Dark blue background */
+    color: #ffffff; /* White text */
     user-select: none; /* Prevent text selection during drag */
     -webkit-user-select: none; /* Safari */
     -moz-user-select: none; /* Firefox */
     -ms-user-select: none; /* IE/Edge */
 }
 
+h1 {
+    color: #87ceeb; /* Light blue title */
+    letter-spacing: 2px;
+    text-shadow: 1px 1px 2px #000000;
+    font-size: 2.5em; /* Larger font size for VT323 */
+}
+
 #game-container {
     display: flex;
     flex-direction: column;
     align-items: center;
-    background-color: #fff;
+    background-color: #000033; /* Slightly lighter dark blue */
     padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    border: 2px solid #87ceeb; /* Light blue border */
+    /* Removed border-radius */
+    box-shadow: 0 0 10px #87ceeb; /* Glow effect */
 }
 
 #game-grid {
     display: grid;
-    grid-template-columns: repeat(16, 30px); /* 16 columns */
-    grid-template-rows: repeat(8, 30px);    /* 8 rows */
-    gap: 2px; /* Small gap between cells */
-    border: 2px solid #ccc;
+    grid-template-columns: repeat(16, 35px); /* Slightly wider cells */
+    grid-template-rows: repeat(8, 35px);    /* Slightly taller cells */
+    gap: 1px; /* Smaller gap */
+    border: 1px solid #555; /* Grid border */
     margin-bottom: 20px;
-    position: relative; /* Needed for selection box potentially */
-    background-color: #e0e0e0; /* Background for the grid gaps */
-    padding: 2px; /* Match gap size */
-    cursor: crosshair; /* Indicate selection capability */
+    position: relative;
+    background-color: #333; /* Darker grid background */
+    padding: 1px; /* Match gap size */
+    cursor: crosshair;
 }
 
 .grid-cell {
-    width: 30px;
-    height: 30px;
-    border: 1px solid #ddd;
+    width: 35px;
+    height: 35px;
+    border: 1px solid #444; /* Darker cell border */
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 16px;
-    font-weight: bold;
-    background-color: #fff;
-    transition: background-color 0.1s ease; /* Smooth color change */
-    /* Prevent dragging individual numbers */
+    font-size: 24px; /* Larger font size for VT323 */
+    font-weight: normal; /* VT323 looks bold by default */
+    background-color: #1a1a4d; /* Dark blue cell background */
+    color: #ffffff; /* White numbers */
+    transition: transform 0.1s ease-out, background-color 0.1s ease, border-color 0.1s ease; /* Added transform transition */
     user-select: none;
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
+    position: relative; /* Needed for potential z-index on scaling */
+    z-index: 5; /* Base z-index */
+}
+
+/* Scaling effect will be applied via JS, but we ensure z-index increases */
+.grid-cell.scaling {
+    z-index: 10;
 }
 
 .grid-cell.selected {
-    background-color: #a0d8ef; /* Highlight color for selected cells */
-    border-color: #007bff;
+    background-color: #3d5a80; /* Muted light blue for selection */
+    border-color: #87ceeb; /* Brighter border for selection */
+    color: #fff;
+    z-index: 15 !important; /* Ensure selected cells are visually prominent */
 }
 
 #controls {
     display: flex;
     flex-direction: column;
     align-items: center;
-    width: 100%; /* Make controls take full width of container */
+    width: 100%;
 }
 
-#score-area {
-    margin-bottom: 15px;
-    font-size: 1.1em;
-    padding: 10px;
-    background-color: #eee;
-    border-radius: 4px;
-    width: 90%;
-    text-align: center;
-}
-
-#score-area span {
-    margin: 0 10px; /* Space out scores */
-}
+/* Score Area Removed */
 
 #bin-buttons button {
     padding: 10px 15px;
-    font-size: 1em;
-    margin: 0 5px;
+    font-size: 20px; /* Larger font size for VT323 */
+    margin: 5px; /* Added vertical margin */
     cursor: pointer;
-    border: none;
-    border-radius: 5px;
-    background-color: #007bff;
-    color: white;
+    border: 1px solid #87ceeb; /* Light blue border */
+    /* Removed border-radius */
+    background-color: #000066; /* Dark blue button background */
+    color: #ffffff; /* White text */
     transition: background-color 0.2s ease;
+    position: relative; /* Needed for absolute positioning of fill */
+    overflow: hidden; /* Keep fill within bounds */
+    min-width: 100px; /* Ensure buttons have some width */
+    text-align: center;
+    font-family: 'VT323', monospace; /* Ensure button font */
 }
 
 #bin-buttons button:hover {
-    background-color: #0056b3;
+    background-color: #000099; /* Lighter blue on hover */
+}
+
+#bin-buttons button .fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 0%; /* Starts at 0% */
+    background-color: #87ceeb; /* Light blue fill color */
+    opacity: 0.6; /* Make it slightly transparent */
+    z-index: 1; /* Behind the text */
+    transition: width 0.3s ease-in-out; /* Smooth fill transition */
+}
+
+#bin-buttons button .btn-text {
+    position: relative; /* To ensure it's above the fill */
+    z-index: 2; /* Above the fill */
 }
 
 #win-message {
     margin-top: 20px;
     padding: 20px;
-    background-color: #d4edda; /* Greenish background for success */
-    color: #155724; /* Dark green text */
-    border: 1px solid #c3e6cb;
-    border-radius: 8px;
+    background-color: #003300; /* Dark green background */
+    color: #00ff00; /* Bright green text */
+    border: 1px solid #00ff00; /* Bright green border */
+    /* Removed border-radius */
     text-align: center;
+    font-size: 24px; /* Larger font size */
+    text-shadow: 1px 1px 2px #000000;
+}
+
+#win-message h2 {
+    margin: 0;
+    color: #00ff00; /* Ensure h2 also uses bright green */
 }
