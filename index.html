@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Number Binning Game</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Number Binning Game</h1>
+
+    <div id="game-container">
+        <div id="game-grid">
+            </div>
+
+        <div id="controls">
+            <div id="score-area">
+                Score:
+                <span>W: <span id="score-W">0</span></span> |
+                <span>F: <span id="score-F">0</span></span> |
+                <span>D: <span id="score-D">0</span></span> |
+                <span>M: <span id="score-M">0</span></span>
+            </div>
+            <div id="bin-buttons">
+                <button id="bin-W">Bin W</button>
+                <button id="bin-F">Bin F</button>
+                <button id="bin-D">Bin D</button>
+                <button id="bin-M">Bin M</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="win-message" style="display: none;">
+        <h2>File Complete!</h2>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
