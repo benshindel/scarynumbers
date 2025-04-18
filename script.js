@@ -1,285 +1,172 @@
-document.addEventListener('DOMContentLoaded', () => {
-    // --- Constants and Globals ---
-    const GRID_ROWS = 8;
-    const GRID_COLS = 16;
-    const TARGET_SCORE = 10;
-    const MAX_SCALE = 1.6;
-    const SCALE_RADIUS = 2.5;
-    const DEFAULT_FILE_NAME = "Tempe"; // Define default file
+/* Import font */
+@import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
 
-    // --- DOM Elements ---
-    const gridElement = document.getElementById('game-grid');
-    // File Selector Removed
-    const rolodexFilenameElement = document.getElementById('rolodex-filename');
-    const prevButtonElement = document.getElementById('rolodex-prev');
-    const nextButtonElement = document.getElementById('rolodex-next');
-    const binButtons = { /* ... same as before ... */ };
-    const fillElements = { /* ... same as before ... */ };
-    const winMessageElement = document.getElementById('win-message');
+body {
+    font-family: 'VT323', monospace;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 20px;
+    background-color: #00004d; /* Dark blue background */
+    color: #ffffff; /* White text */
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
 
-    // --- Game State ---
-    let grid = [];
-    let cellElements = [];
-    let isSelecting = false;
-    let selectionStartCoords = null;
-    let selectionEndCoords = null;
-    let currentSelection = [];
+h1 {
+    color: #87ceeb; /* Light blue title */
+    letter-spacing: 2px;
+    text-shadow: 1px 1px 2px #000000;
+    font-size: 2.5em;
+    margin-bottom: 15px; /* Space below title */
+}
 
-    // --- File Data and State ---
-    // File Data object remains the same
-    const fileData = {
-        "Tempe": { name: "Tempe", scores: { W: 0, F: 0, D: 0, M: 0 }, rules: { /*...*/ } },
-        "Evanston": { name: "Evanston", scores: { W: 0, F: 0, D: 0, M: 0 }, rules: { /*...*/ } },
-        "Rockville": { name: "Rockville", scores: { W: 0, F: 0, D: 0, M: 0 }, rules: { /*...*/ } }
-    };
-    // Populate rules here (omitted for brevity, same as before)
-    fileData["Tempe"].rules = {
-        W: (d) => d.rows === 2 && d.cols === 3 && (d.counts[1] || 0) >= 1,
-        F: (d) => d.rows === 2 && d.cols === 3 && (d.counts[7] || 0) >= 1,
-        D: (d) => d.rows === 2 && d.cols === 3 && (d.counts[6] || 0) >= 1,
-        M: (d) => d.rows === 2 && d.cols === 3 && (d.counts[8] || 0) >= 1,
-    };
-    fileData["Evanston"].rules = {
-        W: (d) => d.rows === 2 && d.cols === 3 && (d.counts[1] || 0) >= 2,
-        F: (d) => d.rows === 2 && d.cols === 3 && d.topLeftValue === 7,
-        D: (d) => d.rows === 2 && d.cols === 2 && (d.counts[6] || 0) >= 1,
-        M: (d) => d.rows === 2 && d.cols === 3 && (d.counts[8] || 0) >= 2,
-    };
-     fileData["Rockville"].rules = {
-        W: (d) => d.rows === 2 && d.cols === 3 && d.topLeftValue === 1 && d.bottomRightValue === 1,
-        F: (d) => d.rows === 2 && d.cols === 3 && d.numbers[1] && d.numbers[1][1] === 7,
-        D: (d) => d.rows === 2 && d.cols === 2 && (d.counts[6] || 0) >= 3,
-        M: (d) => d.rows === 4 && d.cols === 4 && (d.counts[8] || 0) >= 3,
-    };
+/* Styles for the file selector */
+.file-selector-container {
+    margin-bottom: 15px;
+    padding: 10px;
+    background-color: #000033; /* Match game container bg */
+    border: 1px solid #87ceeb; /* Match game container border */
+    display: inline-block; /* Fit content */
+}
 
+.file-selector-container label {
+    margin-right: 10px;
+    font-size: 20px; /* Match button font size */
+    color: #87ceeb; /* Light blue label */
+}
 
-    const fileNames = Object.keys(fileData); // Get list of file names
-    let currentFileIndex = fileNames.indexOf(DEFAULT_FILE_NAME); // Start with default file index
-    let currentFileName = fileNames[currentFileIndex]; // Keep track of name too
+#file-select {
+    font-family: 'VT323', monospace; /* Apply retro font */
+    font-size: 18px; /* Slightly smaller than label */
+    background-color: #1a1a4d; /* Dark blue background */
+    color: #ffffff; /* White text */
+    border: 1px solid #87ceeb; /* Light blue border */
+    padding: 5px 8px;
+    /* Remove default appearance */
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    /* Add custom arrow or leave as is for retro feel */
+    cursor: pointer;
+}
 
-    // --- Initialization --- (initializeGrid, getRandomDigit same as before)
-    function initializeGrid() {
-        if (grid.length === 0) {
-            console.log("Initializing grid numbers for the first time.");
-            grid = [];
-            cellElements = [];
-            gridElement.innerHTML = '';
-            for (let r = 0; r < GRID_ROWS; r++) {
-                grid[r] = []; cellElements[r] = [];
-                for (let c = 0; c < GRID_COLS; c++) {
-                    grid[r][c] = getRandomDigit();
-                    const cell = document.createElement('div');
-                    cell.classList.add('grid-cell');
-                    cell.dataset.row = r; cell.dataset.col = c;
-                    cell.textContent = grid[r][c];
-                    gridElement.appendChild(cell);
-                    cellElements[r][c] = cell;
-                }
-            }
-        } else {
-            console.log("Grid numbers already exist. Ensuring DOM matches.");
-            renderGrid();
-        }
-        console.log("Grid Initialized/Verified");
-    }
-    function getRandomDigit() { return Math.floor(Math.random() * 10); }
+#file-select:focus {
+    outline: 1px dashed #87ceeb; /* Retro focus outline */
+}
 
+#game-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: #000033;
+    padding: 20px;
+    border: 2px solid #87ceeb;
+    box-shadow: 0 0 10px #87ceeb;
+}
 
-    // --- Score Display (Button Fill) --- (updateScoreDisplay same as before)
-    function updateScoreDisplay() {
-        const currentScores = fileData[currentFileName].scores;
-        console.log(`Updating display for file: ${currentFileName}`, currentScores);
-        for (const binType in currentScores) {
-            if (fillElements[binType]) {
-                const score = currentScores[binType];
-                const percentage = Math.min(100, (score / TARGET_SCORE) * 100);
-                fillElements[binType].style.width = `${percentage}%`;
-            }
-        }
-        checkWinCondition(); // Check win condition after updating display
-    }
+#game-grid {
+    display: grid;
+    grid-template-columns: repeat(16, 35px);
+    grid-template-rows: repeat(8, 35px);
+    gap: 1px;
+    border: 1px solid #555;
+    margin-bottom: 20px;
+    position: relative;
+    background-color: #333;
+    padding: 1px;
+    cursor: crosshair;
+}
 
+.grid-cell {
+    width: 35px;
+    height: 35px;
+    border: 1px solid #444;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 24px;
+    font-weight: normal;
+    background-color: #1a1a4d;
+    color: #ffffff;
+    transition: transform 0.1s ease-out, background-color 0.1s ease, border-color 0.1s ease;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    position: relative;
+    z-index: 5;
+}
 
-    // --- File Switching ---
-    function switchToFile(newFileName) {
-        if (newFileName !== currentFileName && fileData[newFileName]) {
-            console.log(`Switching file from ${currentFileName} to ${newFileName}`);
-            currentFileName = newFileName;
-            currentFileIndex = fileNames.indexOf(newFileName); // Keep index synced
+.grid-cell.scaling {
+    z-index: 10;
+}
 
-            // Update Rolodex display
-            rolodexFilenameElement.textContent = currentFileName;
-            rolodexFilenameElement.parentNode.classList.remove('animate-flip'); // Remove animation class if used
-            // void rolodexFilenameElement.parentNode.offsetWidth; // Trigger reflow if needed for animation restart
-            // rolodexFilenameElement.parentNode.classList.add('animate-flip'); // Add animation class if used
+.grid-cell.selected {
+    background-color: #3d5a80;
+    border-color: #87ceeb;
+    color: #fff;
+    z-index: 15 !important;
+}
 
+#controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
 
-            // Reset visual state, but keep grid numbers
-            clearSelectionHighlight();
-            resetCellScales();
-            currentSelection = [];
-            selectionStartCoords = null;
-            selectionEndCoords = null;
-            winMessageElement.style.display = 'none';
-            Object.values(binButtons).forEach(button => button.disabled = false);
+#bin-buttons button {
+    padding: 10px 15px;
+    font-size: 20px;
+    margin: 5px;
+    cursor: pointer;
+    border: 1px solid #87ceeb;
+    background-color: #000066;
+    color: #ffffff;
+    transition: background-color 0.2s ease;
+    position: relative;
+    overflow: hidden;
+    min-width: 100px;
+    text-align: center;
+    font-family: 'VT323', monospace;
+}
 
-            // Update display to show scores for the new file
-            updateScoreDisplay();
-        }
-    }
+#bin-buttons button:hover {
+    background-color: #000099;
+}
 
-    function handleRolodexNext() {
-        const nextIndex = (currentFileIndex + 1) % fileNames.length;
-        switchToFile(fileNames[nextIndex]);
-    }
+#bin-buttons button .fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 0%;
+    background-color: #87ceeb;
+    opacity: 0.6;
+    z-index: 1;
+    transition: width 0.3s ease-in-out;
+}
 
-    function handleRolodexPrev() {
-        const prevIndex = (currentFileIndex - 1 + fileNames.length) % fileNames.length;
-        switchToFile(fileNames[prevIndex]);
-    }
+#bin-buttons button .btn-text {
+    position: relative;
+    z-index: 2;
+}
 
-    // --- Selection Logic --- (getCoordsFromEvent, handleMouseDown, handleMouseMove, handleMouseUp, highlightSelection, clearSelectionHighlight same as before)
-    function getCoordsFromEvent(event) { /* ... */ }
-    function handleMouseDown(event) { /* ... */ }
-    function handleMouseMove(event) { /* ... */ }
-    function handleMouseUp(event) { /* ... */ }
-    function highlightSelection() { /* ... */ }
-    function clearSelectionHighlight() { /* ... */ }
-    // Copy implementations from previous version if needed
+#win-message {
+    margin-top: 20px;
+    padding: 20px;
+    background-color: #003300;
+    color: #00ff00;
+    border: 1px solid #00ff00;
+    text-align: center;
+    font-size: 24px;
+    text-shadow: 1px 1px 2px #000000;
+}
 
-
-    // --- Hover/Scaling Logic --- (gridMouseMove, resetCellScales same as before)
-    function gridMouseMove(event) { /* ... */ }
-    function resetCellScales() { /* ... */ }
-     // Copy implementations from previous version if needed
-
-
-    // --- Binning Logic --- (handleBinClick, checkRule, getSelectionDetails same as before)
-    function handleBinClick(binType) {
-        if (currentSelection.length === 0) return;
-        resetCellScales();
-        console.log(`Attempting to bin selection into ${binType} for file ${currentFileName}`);
-        const selectionDetails = getSelectionDetails(currentSelection);
-        const isCorrect = checkRule(binType, selectionDetails);
-        const currentScores = fileData[currentFileName].scores;
-        if (isCorrect && currentScores[binType] < TARGET_SCORE) {
-            currentScores[binType]++;
-            console.log(`Correct bin! Score for ${binType} in ${currentFileName} is now ${currentScores[binType]}`);
-        } else if (isCorrect) {
-             console.log(`Correct bin, but ${binType} score already maxed out for ${currentFileName}.`);
-        } else {
-            console.log("Incorrect bin.");
-        }
-        removeAndRefill(currentSelection);
-        updateScoreDisplay(); // Checks win condition internally
-        currentSelection = [];
-        selectionStartCoords = null;
-        selectionEndCoords = null;
-    }
-
-    function checkRule(binType, details) {
-        if (!details) return false;
-        const ruleFn = fileData[currentFileName]?.rules?.[binType];
-        if (typeof ruleFn === 'function') {
-            try { return ruleFn(details); }
-            catch (error) { console.error(`Error executing rule ${binType} for file ${currentFileName}:`, error); return false; }
-        } else { console.warn(`Rule function not found for ${binType} in file ${currentFileName}`); return false; }
-    }
-
-    function getSelectionDetails(selectedCoords) { /* ... */ }
-     // Copy implementations from previous version if needed
-
-
-    // --- Grid Refill Logic --- (removeAndRefill, renderGrid same as before)
-    function removeAndRefill(coordsToRemove) { /* ... */ }
-    function renderGrid() { /* ... */ }
-    // Copy implementations from previous version if needed
-
-
-    // --- Win Condition --- (checkWinCondition same as before)
-    function checkWinCondition() {
-        const currentScores = fileData[currentFileName].scores;
-        const won = Object.values(currentScores).every(score => score >= TARGET_SCORE);
-        if (won) {
-            winMessageElement.style.display = 'block';
-            console.log(`File ${currentFileName} complete!`);
-            Object.values(binButtons).forEach(button => button.disabled = true);
-            resetCellScales();
-        } else {
-             winMessageElement.style.display = 'none';
-             Object.values(binButtons).forEach(button => button.disabled = false);
-        }
-    }
-
-
-    // --- Event Listeners Setup ---
-    function setupEventListeners() {
-        // Remove potentially old listeners first
-        gridElement.removeEventListener('mousedown', handleMouseDown);
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-        gridElement.removeEventListener('mousemove', gridMouseMove);
-        gridElement.removeEventListener('mouseleave', resetCellScales);
-        prevButtonElement.removeEventListener('click', handleRolodexPrev);
-        nextButtonElement.removeEventListener('click', handleRolodexNext);
-         Object.values(binButtons).forEach(button => {
-             // Simple listener removal/re-add using cloning
-              const newButton = button.cloneNode(true);
-              button.parentNode.replaceChild(newButton, button);
-         });
-
-
-        // --- Add listeners ---
-        gridElement.addEventListener('mousedown', handleMouseDown);
-        document.addEventListener('mousemove', handleMouseMove);
-        document.addEventListener('mouseup', handleMouseUp);
-        gridElement.addEventListener('mousemove', gridMouseMove);
-        gridElement.addEventListener('mouseleave', resetCellScales);
-
-        // Rolodex listeners
-        prevButtonElement.addEventListener('click', handleRolodexPrev);
-        nextButtonElement.addEventListener('click', handleRolodexNext);
-
-        // Bin button listeners (re-query elements after cloning)
-         Object.keys(binButtons).forEach(binType => {
-             const button = document.getElementById(`bin-${binType}`); // Re-find button by ID
-             if(button){
-                 binButtons[binType] = button; // Update reference in map
-                 fillElements[binType] = button.querySelector('.fill'); // Update fill element reference
-                 button.addEventListener('click', () => handleBinClick(binType));
-             } else {
-                 console.error(`Could not re-find button with ID bin-${binType} after cloning.`);
-             }
-         });
-
-
-        console.log("Event listeners set up.");
-    }
-
-    // --- Start Game ---
-    function startGame() {
-        console.log("Starting game...");
-        // Initialize based on default file index
-        currentFileIndex = fileNames.indexOf(DEFAULT_FILE_NAME);
-        if(currentFileIndex === -1) currentFileIndex = 0; // Fallback if default not found
-        currentFileName = fileNames[currentFileIndex];
-        rolodexFilenameElement.textContent = currentFileName; // Set initial Rolodex text
-
-        initializeGrid();
-        updateScoreDisplay(); // Display scores for the initial file
-        clearSelectionHighlight();
-        currentSelection = [];
-        selectionStartCoords = null;
-        selectionEndCoords = null;
-        setupEventListeners();
-        resetCellScales();
-        console.log(`Game ready. Current file: ${currentFileName}`);
-    }
-
-    // --- Utility Functions (copy from previous if needed) ---
-    // Example implementations needed: getCoordsFromEvent, handleMouseDown, handleMouseMove, handleMouseUp, highlightSelection, clearSelectionHighlight, gridMouseMove, resetCellScales, getSelectionDetails, removeAndRefill, renderGrid
-
-    // --- Start ---
-    startGame(); // Initialize the game
-
-}); // End DOMContentLoaded
+#win-message h2 {
+    margin: 0;
+    color: #00ff00;
+}
